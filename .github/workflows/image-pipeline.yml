@@ -189,12 +189,17 @@ jobs:
         crane copy "${{ env.STAGE_REPO }}@${{ steps.d.outputs.digest }}" "${{ env.PROD_REPO }}:stable"
         crane copy "${{ env.STAGE_REPO }}@${{ steps.d.outputs.digest }}" "${{ env.PROD_REPO }}:sha-$(echo $GITHUB_SHA | cut -c1-7)"
 
-    # Re-sign in prod repo (optional but common)
-    - name: Install cosign
-      uses: sigstore/cosign-installer@v3.7.0
-    - name: Sign prod tags (keyless)
+    - name: Sign prod tags (key-based)
       env:
-        COSIGN_EXPERIMENTAL: "1"
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       run: |
-        cosign sign --yes "${{ env.PROD_REPO }}:stable"
-        cosign sign --yes "${{ env.PROD_REPO }}:sha-$(echo $GITHUB_SHA | cut -c1-7)"
+        echo "Signing ${{ env.PROD_REPO }}:stable"
+        cosign sign --yes \
+          --key env://COSIGN_PRIVATE_KEY \
+          "${{ env.PROD_REPO }}:stable"
+
+        echo "Signing ${{ env.PROD_REPO }}:sha-..."
+        cosign sign --yes \
+          --key env://COSIGN_PRIVATE_KEY \
+          "${{ env.PROD_REPO }}:sha-$(echo $GITHUB_SHA | cut -c1-7)"
