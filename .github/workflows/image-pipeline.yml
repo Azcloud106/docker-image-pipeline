@@ -1,8 +1,6 @@
 name: Image Pipeline
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 
