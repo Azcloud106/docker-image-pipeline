@@ -8,7 +8,7 @@ env:
   STAGE_REPO: docker.io/devopscube/web-app-stage
 
 jobs:
-  build_scan_sbom_sign_stage:
+  build_and_push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,7 +34,6 @@ jobs:
         images: ${{ env.STAGE_REPO }}
         tags: |
           type=sha
-          type=ref,event=branch
           type=raw,value=latest
 
     - name: Build and push to staging repo
@@ -45,11 +44,10 @@ jobs:
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        labels: ${{ steps.meta.outputs.labels }}
         tags: ${{ steps.meta.outputs.tags }}
 
     - name: Read digest
       id: d
       run: |
-        echo "digest=$(cat digest.txt)" >> $GITHUB_OUTPUT
+        echo "${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
 
