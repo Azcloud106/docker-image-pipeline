@@ -16,6 +16,10 @@ on:
         description: "Tag to apply (e.g., stable)"
         required: true
 
+env:
+  STAGE_REPO: docker.io/devopscube/web-app-stage
+  PROD_REPO: docker.io/devopscube/web-app-prod
+
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -37,3 +41,21 @@ jobs:
       run: |
         crane copy "${{ github.event.inputs.sourceRepo }}@${{ github.event.inputs.sourceDigest }}" \
                    "${{ github.event.inputs.targetRepo }}:${{ github.event.inputs.targetTag }}"
+
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@v4.0.0
+
+    - name: Sign prod tags (key-based)
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      run: |
+        echo "Signing ${{ env.PROD_REPO }}:stable"
+        cosign sign --yes \
+          --key env://COSIGN_PRIVATE_KEY \
+          "${{ env.PROD_REPO }}:stable"
+
+        echo "Signing ${{ env.PROD_REPO }}:sha-..."
+        cosign sign --yes \
+          --key env://COSIGN_PRIVATE_KEY \
+          "${{ env.PROD_REPO }}:sha-$(echo $GITHUB_SHA | cut -c1-7)"
