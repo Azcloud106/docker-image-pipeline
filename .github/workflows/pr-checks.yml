@@ -1,11 +1,14 @@
 name: PR Checks
 
 on:
+  pull_request:
+    branches:
+      - develop
   workflow_dispatch:
 
 env:
-  ORG: your-dockerhub-org
-  APP: your-app
+  ORG: devopscube
+  APP: test
 
 jobs:
   lint_build_scan:
