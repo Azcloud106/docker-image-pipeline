@@ -23,9 +23,7 @@ jobs:
 
     - name: Install crane
       run: |
-        curl -L https://github.com/google/go-containerregistry/releases/latest/download/crane_$(uname -s)_$(uname -m).tar.gz \
-          | tar -xz crane
-        sudo mv crane /usr/local/bin/
+        go install github.com/google/go-containerregistry/cmd/crane@latest
 
     - name: Promote to prod repo
       run: |
