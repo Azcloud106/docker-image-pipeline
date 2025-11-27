@@ -10,4 +10,3 @@ fileExistenceTests:
 metadataTest:
   user: "nginxuser"
   exposedPorts: ["8080"]
-  workdir: "/usr/share/nginx/html"
