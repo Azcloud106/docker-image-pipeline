@@ -21,6 +21,15 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    - name: Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.PROD_REPO }}
+        tags: |
+          type=sha,format=short
+          type=raw,value=latest
+
     - name: Install crane
       run: |
         go install github.com/google/go-containerregistry/cmd/crane@latest
@@ -28,11 +37,12 @@ jobs:
 
     - name: Promote to prod repo
       run: |
-        crane copy "${{ env.STAGE_REPO }}@${{ github.event.inputs.sourceDigest }}" \
-          "${{ env.PROD_REPO }}:1.0.${{ github.run_number }}"
-        
-        crane copy "${{ env.STAGE_REPO }}@${{ github.event.inputs.sourceDigest }}" \
-          "${{ env.PROD_REPO }}:latest"
+        digest="${{ github.event.inputs.sourceDigest }}"
+
+        echo "${{ steps.meta.outputs.tags }}" | while read -r TAG; do
+          echo "Promoting to: $TAG"
+          crane copy "${{ env.STAGE_REPO }}@$digest" "$TAG"
+        done
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@v4.0.0
@@ -42,10 +52,6 @@ jobs:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       run: |
-        cosign sign --yes \
-          --key env://COSIGN_PRIVATE_KEY \
-          "${{ env.PROD_REPO }}:latest"
-
-        cosign sign --yes \
-          --key env://COSIGN_PRIVATE_KEY \
-          "${{ env.PROD_REPO }}:1.0.${{ github.run_number }}"
+        for TAG in ${{ steps.meta.outputs.tags }}; do
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAG}"
+        done
