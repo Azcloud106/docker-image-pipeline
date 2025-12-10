@@ -55,8 +55,4 @@ jobs:
       run: |
         cosign sign --yes \
           --key env://COSIGN_PRIVATE_KEY \
-          "${{ env.PROD_REPO }}:${{ steps.meta.outputs.version }}"
-
-        cosign sign --yes \
-          --key env://COSIGN_PRIVATE_KEY \
-          "${{ env.PROD_REPO }}:latest"
+          "${{ env.PROD_REPO }}@${{ github.event.inputs.sourceDigest }}"
